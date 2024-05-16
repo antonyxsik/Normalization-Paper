@@ -20,11 +20,10 @@ A preprint of the paper is currently available at: [Google](google.com)
 
 This folder contains the experimental, research version of the LatticeKrig package. 
 - All scripts in this repo should prompt you to download this in order to reproduce the experiments. The first code block will look like this:
+- The user simply needs to do is change the working directory when prompted. A local install of the **`LatticeKrig`** package will then be made on your machine. The line should look like this:
   ```R
-  #UNCOMMENT IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET: 
   install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
   ```
-- The user simply needs to do is change the working directory when prompted. A local install of the **`LatticeKrig`** package will then be made on your machine.
 
 ### `latticekrig_functions/`:
 This folder highlights which functions in the LatticeKrig package were modified. It is not necessary to do anything with these, as they will be installed on your machine through `LatticeKrigRPackage/`. Regardless, if one is interested, they may look here. 
