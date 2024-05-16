@@ -1,0 +1,672 @@
+---
+title: "Figure Generation for Normalization Paper"
+author: "Antony Sikorski"
+output: pdf_document
+---
+
+Make sure to set correct working directory in this block:  
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#make sure to set correct working directory
+knitr::opts_knit$set(root.dir = normalizePath("C:/Users/anton/Desktop/Normalization_Paper_Github/Normalization-Paper")) #CHANGE THIS
+```
+
+### Local LatticeKrig Install (Research Version)
+
+```{r}
+#local development install
+#install temporary version of LatticeKrig
+
+#UNCOMMENT THIS LINE IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET
+#install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
+```
+
+### Necessary Libraries and Source Functions:  
+
+```{r}
+library(LatticeKrig)
+
+#install if you haven't already 
+library(ggplot2)
+library(scales)
+library(dplyr)
+library(tidyr)
+library(patchwork)
+library(spam64)
+library(fields)
+library(reshape2)
+library(scico)
+library(fftwtools)
+
+#convenient functions
+source("latticekrig_functions/fillGrid.R")
+```
+
+
+### One Dimensional Artifact Figure (Section 1)
+
+```{r}
+set.panel(1,1)
+n<- 20
+x<-  cbind(seq( 0,1 , length.out= n))
+set.seed(121)
+y<- 10*x*(1-x) + .2*rnorm( n)
+
+xGrid<- cbind( seq( 0,1,length.out= 200))
+
+NC<- 8
+a.wght<- 2.001
+obj<- LatticeKrig( x, y, NC=NC, a.wght=a.wght, nlevel=1,
+                  normalize=TRUE)
+gHat<- predict( obj,xGrid )
+obj1<- LatticeKrig( x, y, NC=NC,  a.wght=a.wght,
+                   normalize=FALSE,nlevel=1,)
+gHat1<- predict( obj1,xGrid )
+
+#ggplot option
+# Convert data to data frames for ggplot
+df_points <- data.frame(x = x, y = y)
+df_predictions <- data.frame(xGrid = xGrid,
+                             Unnormalized = gHat1,
+                             Normalized = gHat)
+df_differences <- data.frame(xGrid = xGrid[-1], 
+                             Unnormalized = diff(gHat1),
+                             Normalized = diff(gHat))
+                             
+
+
+# Plotting
+plot1 <- ggplot() +
+  geom_point(data = df_points, aes(x = x, y = y), shape = 16) +
+  geom_line(data = df_predictions, 
+            aes(x = xGrid, y = Normalized, colour = "Normalized"), 
+            size = 1.3, alpha = 0.7) +
+  geom_line(data = df_predictions, 
+            aes(x = xGrid, y = Unnormalized, colour = "Unnormalized"),
+            size = 1.2, alpha = 0.7) +
+  labs(colour = "Fit", x = "s", y = expression(f(s))) +
+  scale_colour_manual(values = c("Normalized" = "#1093ff", 
+                                 "Unnormalized" = "#f00036")) +
+  theme_minimal()
+
+plot2 <- ggplot() +
+  geom_line(data = df_differences, 
+            aes(x = xGrid, y = Normalized, colour = "Normalized"),
+            size = 1.3, alpha = 0.7) +
+  geom_line(data = df_differences, 
+            aes(x = xGrid, y = Unnormalized, colour = "Unnormalized"),
+            size = 1.2, alpha = 0.7) +
+  labs(colour = "Fit", x = "s", y = expression(f(s[i+1]) - f(s[i]))) +
+  scale_colour_manual(values = c("Normalized" = "#1093ff", 
+                                 "Unnormalized" = "#f00036")) +
+  theme_minimal()
+
+# Combine plots side by side using patchwork
+combined_plot <- plot1 + plot2 + plot_layout(ncol = 2) + 
+  plot_layout(guides = 'collect', axis_titles = 'collect')
+combined_plot
+
+# pdf("timing_error/figures/1d_artifacts.pdf",
+#     width = 8, height = 2.8)
+# combined_plot
+# dev.off()
+```
+
+### Basis Function Matrix Sparsity and Variance Uniformity (Section 2)
+
+```{r}
+wendland <- function(x, c, overlap) {
+  # adjust s for overlap
+  s <- abs(x - c) / overlap
+  phi <- ifelse(s <= 1, ((1 - s)^6) * (35 * s^2 + 18 * s + 3) / 3, 0)
+  return(phi)
+}
+
+plot_cartoon_sum <- function(overlap) {
+  centers <- c(1, 3, 5, 7, 9)
+  x_range_full <- seq(0, 10, by = 0.01)
+  sum_phi_full <- numeric(length(x_range_full))
+  data_list <- list()
+  
+  for (c in centers) {
+    x_range_compact <- seq(max(0, c - overlap), min(10, c + overlap), by = 0.01)
+    phi_values_compact <- sapply(x_range_compact, wendland, c = c, overlap = overlap)
+    data_list[[as.character(c)]] <- data.frame(x = x_range_compact, y = phi_values_compact, center = c)
+  }
+  
+  full_data <- do.call(rbind, data_list)
+  full_data$center <- factor(full_data$center)
+  
+  p1 <- ggplot(full_data, aes(x = x, y = y, color = center)) +
+    geom_line(size = 1.3) +
+    geom_point(data = data.frame(x = seq(0, 10, by = 0.5), y = rep(0, length(seq(0, 10, by = 0.5)))), aes(x = x, y = y), color = "black", size = 2) +
+    scale_color_grey(start = 0, end = 0.8) +
+    labs(x = "s", y = expression(phi(s))) +
+    theme_minimal() +
+    ylim(c(0, 1.4))
+  
+  # Adding sum
+  for (i in seq_along(x_range_full)) {
+    for (c in centers) {
+      sum_phi_full[i] <- sum_phi_full[i] + wendland(x_range_full[i], c, overlap)^2
+    }
+  }
+  
+  sum_data <- data.frame(x = x_range_full, y = sum_phi_full)
+  p1 <- p1 + geom_line(data = sum_data, aes(x = x, y = y), color = "magenta", linetype = "dotdash", size = 1.3) + #theme(text = element_text(size = 15), # Increase base text size
+ #         axis.title = element_text(size = 15), # Customize axis titles
+  #        axis.text = element_text(size = 11), # Customize axis text
+   #       legend.title = element_text(size = 11), # Customize legend title
+    #      legend.text = element_text(size = 11)) + 
+    scale_x_continuous(breaks = c(1, 3, 5, 7, 9), labels = c("1", "3", "5", "7", "9"))
+  
+  # Matrix plot
+  evaluation_points <- seq(0, 10, by = 0.5)
+  basis_function_matrix <- matrix(nrow = length(evaluation_points), ncol = length(centers))
+  
+  for (i in 1:length(evaluation_points)) {
+    for (j in 1:length(centers)) {
+      basis_function_matrix[i, j] <- wendland(evaluation_points[i], centers[j], overlap)
+    }
+  }
+  
+  basis_function_matrix <- t(basis_function_matrix[nrow(basis_function_matrix):1, ])
+  mat_melted <- melt(basis_function_matrix)
+  mat_melted <- transform(mat_melted, Var1 = as.numeric(as.character(Var1)), Var2 = as.numeric(as.character(Var2)))
+  p2 <- ggplot(mat_melted, aes(x = Var1, y = Var2, fill = value)) +
+    geom_tile() +
+    scale_fill_viridis_c() +
+    labs(x = expression(paste("Center of ", phi(s))), y = "Points Evaluated") +
+    theme_minimal() + 
+    scale_x_continuous(breaks = c(1, 2, 3, 4, 5), labels = c("1", "3", "5", "7", "9")) #+ 
+    # theme(text = element_text(size = 15), # Increase base text size
+    #       axis.title = element_text(size = 15), # Customize axis titles
+    #       axis.text = element_text(size = 11), # Customize axis text
+    #       legend.title = element_text(size = 11), # Customize legend title
+    #       legend.text = element_text(size = 11))
+  
+  return(list(p1 = p1, p2 = p2))
+}
+
+# usage
+plots <- plot_cartoon_sum(overlap = 6)
+basis_plot <- plots$basis_function_plot
+matrix_plot <- plots$matrix_plot
+
+
+
+overlap_plots <- plot_cartoon_sum(overlap = 6)
+basis_overlap <- overlap_plots$p1
+mat_overlap <- overlap_plots$p2
+
+
+sparse_plots <- plot_cartoon_sum(overlap = 2)
+basis_sparse <- sparse_plots$p1
+mat_sparse <- sparse_plots$p2
+
+basis_sparsity_fig <- basis_overlap + basis_sparse + mat_overlap + mat_sparse + 
+  plot_layout(guides = 'collect', axis_titles = 'collect')
+plot(basis_sparsity_fig)
+
+pdf("timing_error/figures/overlap_sparsity_pink1.pdf", width = 8, height = 5)
+plot(basis_sparsity_fig)
+dev.off()
+```
+
+
+### FFT Process Visualization Figure (Section 3)
+
+```{r}
+fftSmoother <- function(LKinfo, sGrid, nr, nc, plots = FALSE, col = turbo(512), fftcol = turbo(512)){
+  
+  #fft step and dimensions
+  roughMat <- as.surface(sGrid, LKrig.cov(sGrid, LKinfo = LKinfo, marginal=TRUE ))[["z"]]
+  fftStep <- fftw2d((roughMat)/length(roughMat))
+  snr <- nrow(fftStep)
+  snc <- ncol(fftStep)
+  
+  #instantiate empty matrix
+  temp <- matrix(0, nrow = nr, ncol = nc)
+  
+  # Helpful for indexing later 
+  bigindY <- 1:ceiling(snr/2) #1:3
+  bigindX <- 1:ceiling(snc/2) #1;3
+  indY <- 1:floor(snr/2) #1;2
+  indX <- 1:floor(snc/2) #1:2
+  bigOffsetY <- (nr - floor(snr/2)) 
+  bigOffsetX <- (nc - floor(snc/2))
+  smallOffsetY <- (snr - floor(snr/2)) 
+  smallOffsetX <- (snc - floor(snc/2))
+  
+  # Stuffing the small FFT result into the large matrix of zeroes 
+  temp[bigindY, bigindX] <- fftStep[bigindY, bigindX] #top left corner (actually bottom left)
+  temp[bigindY, (indX + bigOffsetX)] <- fftStep[bigindY, (indX + smallOffsetX)] #top right corner
+  temp[(indY + bigOffsetY), bigindX] <- fftStep[(indY + smallOffsetY), bigindX] #bottom left corner 
+  temp[(indY + bigOffsetY), (indX + bigOffsetX)] <- fftStep[(indY + smallOffsetY), (indX + smallOffsetX)] #bottom right corner
+    
+  
+  #takes the inverse of the modified big matrix to return a smoothed version of the input matrix
+  smoothMat <- Re(fftw2d(temp, inverse = 1))
+
+  #shifting
+  yShift <- floor((nr/snr)/2)
+  xShift <- floor((nc/snc)/2)
+  
+  smoothMat <- LKrig.shift.matrix(smoothMat, 
+                                  shift.row = yShift, 
+                                  shift.col = xShift, periodic = c(TRUE, TRUE))
+  
+  #getting basis centers
+  basisNodes<- make.surface.grid(
+  LKinfo$latticeInfo$grid[[1]]
+  )
+  basisNodes1 <- LKrigLatticeCenters(LKinfo, 1)
+  basisNodes2 <- make.surface.grid(basisNodes1)
+
+  
+  if (plots == TRUE){
+    
+    #plotting params
+    #par(mfrow = c(2,2))
+    
+    #capture the axis of the original grid (the -1 to 1 part) (take from the object)
+    xboundLeft <- as.numeric(LKinfo$x[1,1])
+    xboundRight <- as.numeric(LKinfo$x[2,1])
+    yBoundLow <- as.numeric(LKinfo$x[1,2])
+    yBoundHigh <- as.numeric(LKinfo$x[2,2])
+    
+    smallXaxis <- seq(xboundLeft,xboundRight, length.out = snc)
+    smallYaxis <- seq(yBoundLow,yBoundHigh, length.out = snr)
+    bigXaxis <- seq(xboundLeft,xboundRight, length.out = nc)
+    bisYaxis <- seq(yBoundLow,yBoundHigh, length.out = nr)
+    
+    #bounds for fft plots
+    fftmin <- min(log(Mod(temp) + 0.00001))
+    fftmax <- max(log(Mod(fftStep) + 0.00001))
+    
+    #bounds for regular plots
+    colmin <- min(smoothMat)
+    colmax <- max(smoothMat)
+    
+    
+    #plotting the original coarse matrix
+    imagePlot(smallXaxis, smallYaxis, roughMat, col = col, zlim = c(colmin, colmax), 
+              xaxt = 'n', yaxt = 'n', xlab = "", ylab = "")#, horizontal = TRUE)
+    box(lwd = 1.5, col = "black")
+    points(basisNodes2, pch = 21, cex = 1.8, col = "black", bg = "ivory", lwd = 2)
+    
+    
+    #plotting the small fft step, 0.00001 necessary as log(0) will not plot
+    imagePlot(smallXaxis, smallYaxis, log(Mod(fftStep) + 0.00001), col = fftcol, 
+              zlim = c(fftmin, fftmax), xaxt = 'n', yaxt = 'n', xlab = "", ylab = "")
+    box(lwd = 1.5, col = "black")
+    
+    #plotting the large fft padding step 
+    imagePlot(bigXaxis, bisYaxis, log(Mod(temp) + 0.00001), col = fftcol, 
+              zlim = c(fftmin, fftmax), xaxt = 'n', yaxt = 'n', xlab = "", ylab = "")
+    box(lwd = 1.5, col = "black")
+    
+    
+    #plotting the fine matrix after inverse fft 
+    imagePlot(bigXaxis, bisYaxis, smoothMat, col = col, zlim = c(colmin, colmax), 
+              xaxt = 'n', yaxt = 'n', xlab = "", ylab = "")
+    box(lwd = 1.5, col = "black")
+    points(basisNodes2, pch = 21, cex = 1.2, col = "black", bg = "ivory", lwd = 2)
+    
+    #plotting params
+    par(mfrow = c(1,1))
+    
+    #print(colmin)
+    #print(colmax)
+    
+  }
+  
+  return(smoothMat)
+}
+
+my_mako <- mako(256)
+my_mako[256] <- "#FFFFFFFF"
+my_mako <- rev(my_mako)
+
+
+
+proveItWorks <- function(ORIGINALGRID, BIGGRID){
+  # create a simple 1 level model
+  xr<- c( -1,1)
+  yr<- c( -1,1)
+  LKinfo<- LKrigSetup(cbind(xr, yr), nlevel=1, NC=5, NC.buffer = 4, 
+                      a.wght= 4.05, normalize= FALSE)
+  
+  #calculating initial coarse grid
+  gridList<- list( x= seq( -1,1,length.out= ORIGINALGRID),
+                   y= seq( -1,1,length.out= ORIGINALGRID) )
+  sGrid<- make.surface.grid(gridList)
+  look<- LKrig.cov(sGrid, LKinfo = LKinfo, marginal=TRUE )
+  
+  #performing fft normalization
+  #first 4 plots generated here
+  tester <- fftSmoother(LKinfo, sGrid, nr = BIGGRID, nc = BIGGRID, plots = TRUE, 
+                        col = plasma(256),
+                        fftcol = my_mako)
+
+  
+  #calculting true fine grid
+  gridList1 <- list( x= seq( -1,1,length.out=BIGGRID),
+                   y= seq( -1,1,length.out=BIGGRID) )
+  
+  sGrid1 <- make.surface.grid(gridList1)
+  look1 <- LKrig.cov(sGrid1, LKinfo = LKinfo, marginal=TRUE )
+  
+  #plotting the big original matrix 
+  #last plot
+  basisNodes<- make.surface.grid(
+  LKinfo$latticeInfo$grid[[1]]
+  )
+  basisNodes1 <- LKrigLatticeCenters(LKinfo, 1)
+  basisNodes2 <- make.surface.grid(basisNodes1)
+  imagePlot( as.surface(sGrid1, look1), col = plasma(256), 
+             xaxt = 'n', yaxt = 'n')#, zlim = c(4.411986, 5.129177))
+  box(lwd = 1.5, col = "black")
+  points(basisNodes2, pch = 21, cex = 1.2, col = "black", bg = "ivory", lwd = 2)
+  
+}
+
+
+proveItWorks(13, 31)
+```
+
+
+### Timing and Error Results (Section 4)
+
+Loading the dataframe: 
+
+```{r}
+load("timing_error/dataframes/normalization_times_error.rda")
+df <- df[order(df$NumBasis, df$Size),]
+print(df)
+```
+
+We compute the median of five training runs, and then use that median data set for the following plots:  
+
+```{r}
+# reshape the data to a long format
+data_long <- reshape(df, 
+                     varying = list(c("None", "Exact", "Kronecker", "FFT")), 
+                     v.names = "Time",
+                     timevar = "Method",
+                     times = c("None", "Exact", "Kronecker", "FFT"),
+                     direction = "long")
+
+# filter and plot for each unique 'NumBasis' value
+unique_basis_nums <- unique(data_long$NumBasis)
+
+#data long median calculation
+data_long_median <- data_long %>%
+  group_by(Size, NumBasis, Method) %>%
+  summarise(MedianTime = median(Time),
+            MaxTime = max(Time),
+            MinTime = min(Time),
+            MeanErrorPercent = first(`Mean % Error`),
+            MaxErrorPercent = first(`Max % Error`),
+            Method = first(Method),
+            .groups = 'drop')
+
+```
+
+Timing plot: 
+
+```{r}
+unique_basis_nums_no15 <- unique_basis_nums[2:5]
+
+custom_colors <- c("orange2", "cyan3","deeppink2" ,"darkorchid4")
+
+side_lengths <- c(500, 750, 1000, 1250, 1500, 2000)
+squared_lengths <- side_lengths^2
+side_lengths <- c("500", "750", "1000", "1250", "1500", "2000")
+
+
+data_filtered_25 <- filter(data_long_median, NumBasis == 25)
+
+  
+p1 <- ggplot(data_filtered_25, aes(x = Size^2, y = MedianTime, colour = Method, fill = Method)) +
+    geom_ribbon(aes(ymin = MinTime, ymax = MaxTime), alpha = 0.3, color = NA) +
+    geom_line(linetype = "dotted") +
+    geom_point(size = 2.6, shape = 18) +
+    scale_y_log10(limits = c(1,2200)) + 
+    scale_x_log10(labels =side_lengths, breaks = squared_lengths) +
+    #scale_x_log10(labels = function(x) format(x, scientific = TRUE), breaks = c(250000, 1000000, 4000000)) +
+    annotation_logticks(sides = "l", outside = TRUE, color = "darkgrey") +
+    coord_cartesian(clip = "off") +
+    theme_minimal() +
+    labs(x = "n", y = "Time (s)") + 
+    theme(panel.border = element_rect(color = "grey", fill = NA, size = 0.5),
+          axis.title.y = element_text(margin = margin(r = 10, unit = "pt")),
+          axis.title.x = element_text(margin = margin(t = 10, unit = "pt")),
+          axis.text.y = element_text(margin = margin(r = 10, unit = "pt")), 
+          axis.text.x = element_blank()) +  # Adjust right margin for y-axis title
+    scale_color_manual(values = custom_colors) +
+    scale_fill_manual(values = custom_colors)
+
+#plot(p1)
+
+
+data_filtered_35 <- filter(data_long_median, NumBasis == 35)
+
+  
+p2 <- ggplot(data_filtered_35, aes(x = Size^2, y = MedianTime, colour = Method, fill = Method)) + 
+    geom_ribbon(aes(ymin = MinTime, ymax = MaxTime), alpha = 0.3, color = NA) +
+    geom_line(linetype = "dotted") +
+    geom_point(size = 2.6, shape = 18) +
+    scale_y_log10(limits = c(1,2200)) + 
+    scale_x_log10(labels =side_lengths, breaks = squared_lengths) +
+    #scale_x_log10(labels = function(x) format(x, scientific = TRUE), breaks = c(250000, 1000000, 4000000)) +
+    #annotation_logticks(sides = "l", outside = TRUE, color = "darkgrey") +
+    coord_cartesian(clip = "off") +
+    theme_minimal() +
+    labs(x = "n", 
+         y = "Time (s)") + 
+    theme(panel.border = element_rect(color = "grey", fill = NA, size = 0.5),
+          axis.title.y = element_text(margin = margin(r = 10, unit = "pt")),
+          axis.title.x = element_text(margin = margin(t = 10, unit = "pt")),
+          axis.text.y = element_blank(), 
+          axis.text.x = element_blank()) + 
+  scale_color_manual(values = custom_colors) +  # Apply custom colors to lines
+    scale_fill_manual(values = custom_colors)
+  
+#plot(p2)
+
+
+data_filtered_50 <- filter(data_long_median, NumBasis == 50)
+
+  
+p3 <- ggplot(data_filtered_50, aes(x = Size^2, y = MedianTime, colour = Method, fill = Method)) + 
+    geom_ribbon(aes(ymin = MinTime, ymax = MaxTime), alpha = 0.3, color = NA) +
+    geom_line(linetype = "dotted") +
+    geom_point(size = 2.6, shape = 18) +
+    scale_y_log10(limits = c(1,2200)) + 
+    scale_x_log10(labels =side_lengths, breaks = squared_lengths) +
+    #scale_x_log10(labels = function(x) format(x, scientific = TRUE), breaks = c(250000, 1000000, 4000000)) +
+    annotation_logticks(sides = "l", outside = TRUE, color = "darkgrey") +
+    coord_cartesian(clip = "off") +
+    theme_minimal() +
+    labs(x = "n", 
+         y = "Time (s)") + 
+    theme(panel.border = element_rect(color = "grey", fill = NA, size = 0.5),
+          axis.title.y = element_text(margin = margin(r = 10, unit = "pt")),
+          axis.title.x = element_text(margin = margin(t = 10, unit = "pt")),
+          axis.text.y = element_text(margin = margin(r = 10, unit = "pt"))) + #axis.text.x = element_text(angle = -30, hjust = 0)
+  scale_color_manual(values = custom_colors) +  # Apply custom colors to lines
+    scale_fill_manual(values = custom_colors)
+  
+#plot(p3)
+
+
+
+data_filtered_100 <- filter(data_long_median, NumBasis == 100)
+
+
+p4 <- ggplot(data_filtered_100, aes(x = Size^2, y = MedianTime, colour = Method, fill = Method)) + 
+    geom_ribbon(aes(ymin = MinTime, ymax = MaxTime), alpha = 0.3, color = NA) +
+    geom_line(linetype = "dotted") +
+    geom_point(size = 2.6, shape = 18) +
+    scale_y_log10(limits = c(1,2200)) + 
+    scale_x_log10(labels =side_lengths, breaks = squared_lengths) +
+    #scale_x_log10(labels = function(x) format(x, scientific = TRUE), breaks = c(250000, 1000000, 4000000)) +
+    #annotation_logticks(sides = "l", outside = TRUE, color = "darkgrey") +
+    coord_cartesian(clip = "off") +
+    theme_minimal() +
+    labs(x = "n", 
+         y = "Time (s)") + 
+    theme(panel.border = element_rect(color = "grey", fill = NA, size = 0.5),
+          axis.title.y = element_text(margin = margin(r = 10, unit = "pt")),
+          axis.title.x = element_text(margin = margin(t = 10, unit = "pt")),
+          axis.text.y = element_blank()) + #axis.text.x = element_text(angle = -30, hjust = 0)
+  scale_color_manual(values = custom_colors) +  # Apply custom colors to lines
+    scale_fill_manual(values = custom_colors)
+  
+#plot(p4)
+
+all_timing_1 <- p1 + p2 + p3 + p4 + 
+  plot_layout(guides = 'collect', axis_titles = 'collect')
+plot(all_timing_1)
+
+pdf("timing_error/figures/timing_all_fish.pdf", width = 8, height = 5)
+plot(all_timing_1)
+dev.off()
+
+```
+
+
+
+We are also interested in the error. Both maximum and mean error are recorded for each run (they will be the exact same each time for the same number of basis functions and coarse grid size):
+
+
+```{r}
+names(data_long_median)[names(data_long_median) == "MeanErrorPercent"] <- "Mean"
+names(data_long_median)[names(data_long_median) == "MaxErrorPercent"] <- "Max"
+#data_long_error <- data_long_median %>% group_by(`Mean Error`, `Max Error`)
+data_long_error <- data_long_median[data_long_median$Method == "FFT",]
+```
+
+
+```{r}
+# interesed in magnitude
+data_long_error$Mean <- abs(data_long_error$Mean)
+
+# transform data to a long format for easier plotting with ggplot2
+data_long_error <- data_long_error %>%
+  dplyr::select(Size, NumBasis, Mean, Max) %>%
+  tidyr::pivot_longer(cols = c(Mean, Max),
+                      names_to = "ErrorType",
+                      values_to = "ErrorValue")
+
+#dont need the 15, paper uses 35 and up 
+data_long_error_no15 <- data_long_error %>% filter(NumBasis != 15)
+
+custom_colors <- c("orange2", "deeppink2", "cyan3", "darkorchid4")
+
+
+# plot for paper
+error_all_bfuncs <- ggplot(data_long_error_no15, aes(x = Size^2, 
+                                  y = ErrorValue, 
+                                  color = as.factor(NumBasis), 
+                                  shape = ErrorType, # Add shape aesthetic for ErrorType
+                                  group = interaction(NumBasis, ErrorType))) +
+  geom_point(size = 4, alpha = 0.6) +
+  scale_y_log10() + 
+  scale_x_log10(labels =side_lengths, breaks = squared_lengths) +
+  #scale_x_log10(labels = function(x) format(x, scientific = FALSE), breaks = c(250000, 1000000, 4000000)) +
+  annotation_logticks(sides = "l", outside = TRUE, color = "darkgrey") +
+  coord_cartesian(clip = "off") +
+  scale_shape_manual(values = c("Mean" = 19, "Max" = 17)) +
+  scale_color_manual(values = custom_colors, name = "NumBasis") + # Apply custom colors
+  labs(x = "n",
+       y = "Error (%)",
+       color = "NumBasis",
+       shape = "Error Type") +
+  theme_minimal() +
+    theme(panel.border = element_rect(color = "grey", fill = NA, size = 0.5),
+          axis.title.y = element_text(margin = margin(r = 10, unit = "pt"), size = 9),
+          axis.title.x = element_text(margin = margin(t = 6, unit = "pt"), size = 9),
+          axis.text.y = element_text(margin = margin(r = 10, unit = "pt"), size = 7),
+          axis.text.x = element_text(size = 7),
+          legend.text = element_text(size = 8), 
+          legend.title = element_text(size = 9)) +
+  guides(col = guide_legend(title = "     r"),
+         shape = guide_legend(title = "Error Type"))
+
+plot(error_all_bfuncs)
+
+pdf("timing_error/figures/Error_allBfuncs.pdf", width = 6, height = 3.2)
+plot(error_all_bfuncs)
+dev.off()
+```
+
+
+### Other Sources of Error (Section 4.3)
+
+Here we test a few theories. None of these plots will be used in the paper for pretty visualizations. They are just for investigation and understanding.  
+
+For example, how does coarse grid size impact the error: 
+
+```{r}
+load("timing_error/dataframes/coarsegrid_error.rda")
+print(df_CoarseGrid)
+print.data.frame(df_CoarseGrid)
+
+plot(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MaxErrorPercent, pch = 16, 
+     xlab = "Starting Grid Side Length", ylab = "Mean Error (%)")
+lines(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MaxErrorPercent, 
+      col = "blue", lwd = 1.5)
+
+
+plot(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MeanErrorPercent, pch = 16, 
+     xlab = "Starting Grid Side Length", ylab = "Max Error (%)")
+lines(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MeanErrorPercent, pch = 16, 
+      col = "blue", lwd = 1.5)
+```
+
+Course grid increase will monotonically decrease the error until we end up with machine error. 
+
+
+How does the number of buffer function impact the error? 
+
+```{r}
+load("timing_error/dataframes/buffer_error.rda")
+print.data.frame(df_Buffer)
+
+plot(df_Buffer$NumBuffer, df_Buffer$MaxErrorPercent, pch = 16, 
+     xlab = "Buffer Functions (NC)", ylab = "Mean Error (%)")
+lines(df_Buffer$NumBuffer, df_Buffer$MaxErrorPercent, 
+      col = "red", lwd = 1.5)
+
+
+plot(df_Buffer$NumBuffer, abs(df_Buffer$MeanErrorPercent), pch = 16, 
+     xlab = "Buffer Functions (NC)", ylab = "Max Error (%)")
+lines(df_Buffer$NumBuffer, abs(df_Buffer$MeanErrorPercent), pch = 16, 
+      col = "red", lwd = 1.5)
+```
+
+Appears to have a minimum at 10 buffer functions. 
+
+How does the awght (overlap) impact the error? 
+
+```{r}
+load("timing_error/dataframes/awght_error.rda")
+print.data.frame(df_awght)
+
+plot(df_awght$A.wght, df_awght$MaxErrorPercent, pch = 16, 
+     xlab = "awght param", ylab = "Mean Error (%)")
+lines(df_awght$A.wght, df_awght$MaxErrorPercent, 
+      col = "darkgreen", lwd = 1.5)
+
+
+plot(df_awght$A.wght, abs(df_awght$MeanErrorPercent), pch = 16, 
+     xlab = "awght param", ylab = "Max Error (%)")
+lines(df_awght$A.wght, abs(df_awght$MeanErrorPercent), pch = 16, 
+      col = "darkgreen", lwd = 1.5)
+```
+
+It appears that the awght (overlap) slightly impacts the error, and the original 4.05 parameter works the best as expected. 

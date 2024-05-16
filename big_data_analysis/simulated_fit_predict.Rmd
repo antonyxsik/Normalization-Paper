@@ -1,0 +1,384 @@
+---
+title: "Simulated Experiments: Fitting and Predicting"
+author: "Antony Sikorski"
+output: html_document
+---
+
+Make sure to set correct working directory in this block: 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#make sure to set correct working directory
+knitr::opts_knit$set(root.dir = normalizePath("C:/Users/anton/Desktop/Normalization_Paper_Github/Normalization-Paper"))
+```
+
+
+Locally installing the research version of LatticeKrig: 
+```{r}
+#local development install
+#install temporary version of LatticeKrig
+
+#UNCOMMENT IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET: 
+#install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
+```
+
+Loading necessary libraries and files: 
+
+```{r}
+library(fields)
+library(hdf5r)
+library(LatticeKrig)
+library(tictoc)
+library(fftwtools)
+library(ggplot2)
+library(ggpubr)
+library(xtable)
+library(gridExtra)
+library(spam64)
+library(viridis)
+library(maps)
+
+# parallel conditional sim 
+source("latticekrig_functions/LKrig.sim.conditional.foreach.R")
+
+#convenient grid checker
+source("latticekrig_functions/fillGrid.R")
+```
+
+Setup for the whole experiment: 
+
+```{r}
+# these are universal and very important
+dataCase <- "MAR" #options are MAR, BLOCKS 
+normalizeCase <- "none" #options are fft, kronecker, exact, none
+
+#decides if we do conditional sim or not 
+conditionalSim <- FALSE
+#number of draws
+numDraws <- 10
+```
+
+Making the full dataset with fast option in fields: 
+
+```{r}
+#creating data
+set.seed(236)
+
+#nested, 48r - 48 + 1 = data
+smolGrid <- list( x = c(1:25), y = c(1:25))
+check <- fillGrid(smolGrid, 48)
+
+grid<- list( x= seq( from = 0, to = 90,length.out = 1153), 
+               y= seq( from = 0, to = 90,length.out = 1153)) 
+
+#sanity check
+test.for.zero(length(check$x), length(grid$x))
+test.for.zero(length(check$y), length(grid$y))
+
+obj<- circulantEmbeddingSetup( grid,
+                               cov.args = list( 
+                                 Covariance="Matern", 
+                                 aRange=6, 
+                                 smoothness=1.0
+                                 )
+                              )
+
+field <- circulantEmbedding(obj)
+
+field <- 5 * field + 2 + (0.2*rnorm(length(field)))
+
+imagePlot(field, main = "Simulated Random Field with Matern Covariance", 
+          col = turbo(256))
+  
+coords <- expand.grid(lat = grid$x, lon = grid$y)
+air_temp <- as.vector(field)
+
+df <- data.frame(lat = coords$lat, lon = coords$lon, air_temp = air_temp)
+save(df, file = "big_data_analysis/dataframes/simulatedFull.rda")
+```
+
+Creating training and test data for both cases: 
+
+```{r}
+
+if (dataCase == "MAR"){
+
+  #creating train and test sets
+  missingness <- 0.8
+  
+  set.seed(777)
+  n <- nrow(df)
+  ind <- sample(1:n, size = round(missingness * n), replace = FALSE)
+  
+  train <- df[-ind, ]
+  test <- df[ind, ]
+  
+  #sanity check to make sure i still have the same size grid
+  print(length(unique(train[,1])))
+  print(length(unique(train[,2])))
+  print(length(unique(df[,1])))
+  print(length(unique(df[,2])))
+  
+  
+  #full data visual
+  fullPlot <- ggplot(df) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Full") 
+  plot(fullPlot)
+  
+  
+  
+  # training data visual
+  trainPlot <- ggplot(train) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Train") 
+  plot(trainPlot)
+  
+  
+  
+  # test  data visual
+  testPlot <- ggplot(test) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Test") 
+  plot(testPlot)
+  
+  save(train, test, ind, file = "big_data_analysis/dataframes/simulatedMAR.rda")
+}
+
+
+
+
+
+if (dataCase == "BLOCKS"){
+  
+  blockNum <- 100
+  
+  lon_min <- min(df$lon) 
+  lon_max <- max(df$lon) 
+  lat_min <- min(df$lat) 
+  lat_max <- max(df$lat) 
+  
+  blockSize <- blockNum * 90/1153
+  
+  #block 1 (bottom left)
+  lon_start1 = 15
+  lon_end1 <- lon_start1 + blockSize
+  
+  lat_start1 = 30
+  lat_end1 = lat_start1 + blockSize
+  
+  test1 <- df[df$lon >= lon_start1 & df$lon < lon_end1 & df$lat >= lat_start1 & df$lat < lat_end1, ]
+  train <- df[!(df$lon >= lon_start1 & df$lon < lon_end1 & df$lat >= lat_start1 & df$lat < lat_end1), ]
+  
+
+  # block 2 (middle)
+  lon_start2 = 45
+  lon_end2 <- lon_start2 + blockSize
+  
+  lat_start2 = 80
+  lat_end2 = lat_start2 + blockSize
+  
+  test2 <- rbind(test1, df[df$lon >= lon_start2 & df$lon < lon_end2 & df$lat >= lat_start2 & df$lat < lat_end2, ])
+  train <- train[!(train$lon >= lon_start2 & train$lon < lon_end2 & train$lat >= lat_start2 & train$lat < lat_end2), ]
+  
+  # block 3 (bottom left) finishes test set 
+  lon_start = 75
+  lon_end <- lon_start + blockSize
+  
+  lat_start = 45
+  lat_end = lat_start + blockSize
+  
+  test <- rbind(test2, df[df$lon >= lon_start & df$lon < lon_end & df$lat >= lat_start & df$lat < lat_end, ])
+  train <- train[!(train$lon >= lon_start & train$lon < lon_end & train$lat >= lat_start & train$lat < lat_end), ]
+  ind <- as.numeric(row.names(test))
+  
+  
+  
+  # full data visual
+  fullPlot <- ggplot(df) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Full") 
+  plot(fullPlot)
+  
+  
+  
+  # train data visual
+  trainPlot <- ggplot(train) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Train") 
+  plot(trainPlot)
+  
+  
+  
+  # test data visual 
+  dfCopy <- df
+  dfCopy$testBlockValue <- NA
+  dfCopy[ind,4] <- test[,3]
+  
+  testPlot <- ggplot(dfCopy) + geom_raster(aes(x = lon, y = lat, fill = testBlockValue)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", na.value = "white", 
+                         limits = c(min(df$air_temp), max(df$air_temp)), 
+                         name = "") + 
+    ggtitle(label = "Test") 
+  
+  plot(testPlot)
+  
+  
+  save(train, test, ind, 
+       file = "big_data_analysis/dataframes/simulatedBLOCKS.rda")
+  
+}
+
+```
+
+Okay, now let's write out our possibilities for the normalization cases: 
+
+```{r}
+
+switch(normalizeCase,
+  "none" = {
+    normChoice <- FALSE
+  },
+  "exact" = {
+    normChoice <- TRUE
+    normMethod <- "exact"
+  },
+  "kronecker" = {
+    normChoice <- TRUE
+    normMethod <- "exactKronecker"
+  },
+  "fft" = {
+    normChoice <- TRUE
+    normMethod <- "both"
+  }
+)
+
+```
+
+
+Setting up the params, x, y, covariates, and the LKinfo object. 
+
+```{r}
+#training 
+#locations
+x <- cbind(train$lat, train$lon)
+#response air temp
+y <- train$air_temp
+#predictors (none in this case)
+#Z <- cbind(train$elevation, train$ghi)
+
+#sanity check
+length(unique(x[,1]))
+length(unique(x[,2]))
+
+
+#testing
+#locations
+xtest <- cbind(test$lat, test$lon)
+#response air temp
+ytest <- test$air_temp
+#predictors
+#Ztest <- cbind(test$elevation, test$ghi)
+
+
+# setup params
+
+# there is no "normalizeMethod" selection for none
+if (normalizeCase == "none"){
+  LKinfo <- LKrigSetup(x, NC = 25, nlevel = 4, NC.buffer = 10, 
+                       normalize = normChoice, 
+                       nu = 1, a.wght = 4.015)
+} else{
+  LKinfo <- LKrigSetup(x, NC = 25, nlevel = 4, NC.buffer = 10, 
+                       normalize = normChoice, normalizeMethod = normMethod,
+                       nu = 1, a.wght = 4.015)
+}
+```
+
+Fitting:
+
+```{r}
+comp.time.fit <- system.time(fit <- LatticeKrig(x, y, LKinfo = LKinfo, verbose = FALSE))
+```
+
+Predicting the whole surface (not just at unknown locations)
+
+```{r}
+predgrid <- make.surface.grid(grid)
+comp.time.pred <- system.time(preds <- predict(fit, predgrid))
+```
+
+Let's take a look at our predicted surface: 
+
+```{r}
+summary(abs(preds - air_temp))
+summary(abs(preds[ind] - ytest))
+
+dfPred <- data.frame(lat = df$lat, lon = df$lon, air_temp = preds)
+
+# predicted data visual
+  predPlot <- ggplot(dfPred) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "") + 
+    ggtitle(label = "Predicted Surface (Blocks)") 
+plot(predPlot)
+
+
+```
+
+
+Building in the option to do conditional simulation to find the SE: 
+
+```{r}
+if (conditionalSim == TRUE){
+  
+  # conditional simulation to determine prediction SE
+  comp.time.sim <- system.time(outputSim <- LKrig.sim.conditional(fit,
+                                      x.grid = xtest,
+                                      M = numDraws))
+  
+  #prediction SE needs to include uncertainty due to nugget 
+  comp.time.SE <- system.time(standardError<- sqrt( 
+        apply( outputSim$g.draw, 1, "var") +
+        fit$sigma.MLE^2))
+}
+```
+
+Total times and saving results: 
+
+```{r}
+# total time
+if (conditionalSim == TRUE){
+  comp.time.total <- comp.time.fit + comp.time.pred + comp.time.sim + comp.time.SE
+  
+  results <- list(y = ytest, #true values 
+                predSurface = preds, #predicted surface
+                SE = standardError, #SE
+                time = comp.time.total) #total time
+  
+} else{
+  comp.time.total <- comp.time.fit + comp.time.pred
+  
+  results <- list(y = ytest, #true values 
+                predSurface = preds, #predicted surface
+                time = comp.time.total) #total time
+}
+
+save( results, fit, comp.time.total, 
+      file=paste0("big_data_analysis/results/",normalizeCase,dataCase,"Results.rda") )
+```
+
+
+

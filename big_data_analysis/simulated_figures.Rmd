@@ -1,0 +1,437 @@
+---
+title: "Simulated Figures and Analysis"
+author: "Antony Sikorski"
+output: html_document
+---
+
+Make sure to set correct working directory in this block: 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#make sure to set correct working directory
+knitr::opts_knit$set(root.dir = normalizePath("C:/Users/anton/Desktop/Normalization_Paper_Github/Normalization-Paper"))
+```
+
+
+Locally installing the research version of LatticeKrig: 
+```{r}
+#local development install
+#install temporary version of LatticeKrig
+
+#UNCOMMENT IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET:
+#install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
+```
+
+Libraries and files:
+
+```{r}
+library(fields)
+library(hdf5r)
+library(LatticeKrig)
+library(tictoc)
+library(fftwtools)
+library(ggplot2)
+library(ggpubr)
+library(xtable)
+library(gridExtra)
+library(spam64)
+library(viridis)
+library(maps)
+library(patchwork)
+library(scico)
+library(ggmagnify)
+library(scales)
+
+# parallel conditional sim 
+source("latticekrig_functions/LKrig.sim.conditional.foreach.R")
+
+#convenient grid checker
+source("latticekrig_functions/fillGrid.R")
+```
+
+
+Loading in full data and visualizing: 
+
+```{r}
+#loading in full data
+load("big_data_analysis/dataframes/simulatedFull.rda")
+
+#full data visual
+fullplot <- ggplot(df) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "True Surface") + 
+    theme(plot.title = element_blank())
+plot(fullplot)
+```
+
+Loading in missing blocks case: 
+
+```{r}
+#load in the blocks data splits
+load("big_data_analysis/dataframes/simulatedBLOCKS.rda")
+
+trainBLOCKS <- train
+testBLOCKS <- test
+indBLOCKS <- ind
+```
+
+Let's do some plotting to visualize the block case: 
+
+```{r}
+# training data visual
+trainBLOCKSplot <- ggplot(trainBLOCKS) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Train (Blocks)") + 
+    theme(plot.title = element_blank())
+plot(trainBLOCKSplot)
+  
+  
+  
+  # test  data visual
+testBLOCKSplot <- ggplot(testBLOCKS) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Test BLOCKS") 
+plot(testBLOCKSplot)
+```
+
+Results for the block case: 
+
+```{r}
+#Missing Blocks results data frame
+dfBLOCKS <- data.frame(Method = character(), 
+                    MAE = numeric(), 
+                    RMSE = numeric(), 
+                    RunTime = numeric(), 
+                    stringsAsFactors = FALSE)
+
+# NO NORMALIZATION RESULTS ###########################################
+load("big_data_analysis/results/noneBLOCKSResults.rda")
+
+nonefitBLOCKS <- fit
+ytest <- results$y
+noneSurfaceBLOCKS <- results$predSurface
+nonePredsBLOCKS <- noneSurfaceBLOCKS[indBLOCKS]
+  
+#metrics
+MAE <- mean(abs(nonePredsBLOCKS - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((nonePredsBLOCKS - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfBLOCKS[1,] <- NA
+dfBLOCKS[1,] <- c("None", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+
+# KRONECKER NORMALIZATION RESULTS ######################################
+load("big_data_analysis/results/kroneckerBLOCKSResults.rda")
+
+kroneckerfitBLOCKS <- fit
+ytest <- results$y
+kroneckerSurfaceBLOCKS <- results$predSurface
+kroneckerPredsBLOCKS <- kroneckerSurfaceBLOCKS[indBLOCKS]
+  
+#metrics
+MAE <- mean(abs(kroneckerPredsBLOCKS - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((kroneckerPredsBLOCKS - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfBLOCKS[2,] <- c("Kronecker", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+# FFT + KRONECKER NORMALIZATION RESULTS ################################
+load("big_data_analysis/results/fftBLOCKSResults.rda")
+
+FFTfitBLOCKS <- fit
+ytest <- results$y
+FFTSurfaceBLOCKS <- results$predSurface
+FFTPredsBLOCKS <- FFTSurfaceBLOCKS[indBLOCKS]
+  
+#metrics
+MAE <- mean(abs(FFTPredsBLOCKS - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((FFTPredsBLOCKS - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfBLOCKS[3,] <- c("FFT", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+# EXACT NORMALIZATION RESULTS #########################################
+load("big_data_analysis/results/exactBLOCKSResults.rda")
+
+exactfitBLOCKS <- fit
+ytest <- results$y
+exactSurfaceBLOCKS <- results$predSurface
+exactPredsBLOCKS <- exactSurfaceBLOCKS[indBLOCKS]
+  
+#metrics
+MAE <- mean(abs(exactPredsBLOCKS - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((exactPredsBLOCKS - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfBLOCKS[4,] <- c("Exact", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+#Note: Exact will not have the same MAE and RMSE
+# it has not been rerun in the most recent experiment with 
+# a slightly different overlap param. Timing will be the 
+# same so we just use that
+
+#changing that here
+dfBLOCKS[4,2] <- dfBLOCKS[2,2]
+dfBLOCKS[4,3] <- dfBLOCKS[2,3]
+
+dfBLOCKS
+```
+
+
+Recently reran Kronecker and FFT. Both are slightly slower here due to me coding during these experiments being run. Nevertheless, all looks exactly as expected. Also, exact experiment was not rerun with new a.wght, but timing not impacted by this so we just use the existing time. 
+
+
+Quick artifact examination and all sorts of sanity checks : 
+
+```{r}
+# looking at artifacts from no Normalization (absolute value for magnitude)
+pattern <- (noneSurfaceBLOCKS - kroneckerSurfaceBLOCKS)
+dfArtifacts <- data.frame(lat = df$lat, lon = df$lon, pattern = abs(pattern))
+
+artifactBLOCKSplot <- ggplot(dfArtifacts) + geom_raster(aes(x = lon, y = lat, fill = pattern)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "") + 
+    ggtitle(label = "Unnormalized Block Artifacts (absolute value)") 
+plot(artifactBLOCKSplot)
+
+summary(abs(noneSurfaceBLOCKS - kroneckerSurfaceBLOCKS))
+
+
+#are there any artifacts from FFT? 
+FFTpattern <- (FFTSurfaceBLOCKS - kroneckerSurfaceBLOCKS)
+dfFFTArtifacts <- data.frame(lat = df$lat, lon = df$lon, FFTpattern = abs(FFTpattern))
+
+FFTartifactBLOCKSplot <- ggplot(dfFFTArtifacts) + geom_raster(aes(x = lon, y = lat, fill = FFTpattern)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "viridis", name = "") + 
+    ggtitle(label = "FFT - Exact Baby Artifacts (absolute value)") 
+plot(FFTartifactBLOCKSplot)
+
+summary(abs(FFTSurfaceBLOCKS - kroneckerSurfaceBLOCKS))
+
+```
+
+Loading in Missing at Random data: 
+
+```{r}
+#load in the blocks data splits
+load("big_data_analysis/dataframes/simulatedMAR.rda")
+
+trainMAR <- train
+testMAR <- test
+indMAR <- ind
+```
+
+Visualizations of train and test: 
+
+```{r}
+# training data visual
+trainMARplot <- ggplot(trainMAR) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Train (MAR)") + 
+    theme(plot.title = element_blank())
+plot(trainMARplot)
+  
+  
+  
+  # test  data visual
+testMARplot <- ggplot(testMAR) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", name = "", 
+                         limits = c(min(df$air_temp), max(df$air_temp))) + 
+    ggtitle(label = "Test MAR") 
+plot(testMARplot)
+```
+
+Paper plots (section 5) with both blocks, mar, and full: 
+
+```{r}
+from <- c(xmin = 26.5, xmax = 28, ymin = 31.5, ymax = 33)
+# Names xmin, xmax, ymin, ymax are optional:
+to <- c(50, 80, 50, 80)
+
+trainMARplot <- trainMARplot + geom_magnify(from = from, to = to)
+#trainMARplot
+
+paperPlot <- trainBLOCKSplot + trainMARplot + fullplot + plot_layout(guides = 'collect', axis_titles = 'collect')
+plot(paperPlot)
+
+pdf("big_data_analysis/figures/simulated_trains_full.pdf", width = 8, height = 2.7)
+plot(paperPlot)
+dev.off()
+```
+
+
+Results for MAR: 
+
+```{r}
+#Missing at Random results data frame
+dfMAR <- data.frame(Method = character(), 
+                    MAE = numeric(), 
+                    RMSE = numeric(), 
+                    RunTime = numeric(), 
+                    stringsAsFactors = FALSE)
+
+# NO NORMALIZATION RESULTS ###########################################
+load("big_data_analysis/results/noneMARResults.rda")
+
+nonefitMAR <- fit
+ytest <- results$y
+noneSurfaceMAR <- results$predSurface
+nonePredsMAR <- noneSurfaceMAR[indMAR]
+  
+#metrics
+MAE <- mean(abs(nonePredsMAR - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((nonePredsMAR - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfMAR[1,] <- NA
+dfMAR[1,] <- c("None", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+
+# KRONECKER NORMALIZATION RESULTS ######################################
+load("big_data_analysis/results/kroneckerMARResults.rda")
+
+kroneckerfitMAR <- fit
+ytest <- results$y
+kroneckerSurfaceMAR <- results$predSurface
+kroneckerPredsMAR <- kroneckerSurfaceMAR[indMAR]
+  
+#metrics
+MAE <- mean(abs(kroneckerPredsMAR - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((kroneckerPredsMAR - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfMAR[2,] <- c("Kronecker", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+# FFT + KRONECKER NORMALIZATION RESULTS ################################
+load("big_data_analysis/results/fftMARResults.rda")
+
+FFTfitMAR <- fit
+ytest <- results$y
+FFTSurfaceMAR <- results$predSurface
+FFTPredsMAR <- FFTSurfaceMAR[indMAR]
+  
+#metrics
+MAE <- mean(abs(FFTPredsMAR - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((FFTPredsMAR - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfMAR[3,] <- c("FFT", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+# EXACT NORMALIZATION RESULTS #########################################
+load("big_data_analysis/results/exactMARResults.rda")
+
+exactfitMAR <- fit
+ytest <- results$y
+exactSurfaceMAR <- results$predSurface
+exactPredsMAR <- exactSurfaceMAR[indMAR]
+  
+#metrics
+MAE <- mean(abs(exactPredsMAR - ytest),na.rm=TRUE)
+RMSE <- sqrt(mean((exactPredsMAR - ytest)^2,na.rm=TRUE))
+Time <- comp.time.total[[3]]/60
+
+dfMAR[4,] <- c("Exact", round(MAE, 4), round(RMSE, 4), round(Time, 4))
+########################################################################
+
+dfMAR
+```
+
+
+MAR artifact visualization and all sorts of sanity checks: 
+
+```{r}
+# looking at artifacts from no Normalization
+#UNNORMALIZED ARTIFACTS FOR MAR (whole surface)
+pattern <- (noneSurfaceMAR - kroneckerSurfaceMAR)
+dfArtifacts <- data.frame(lat = df$lat, lon = df$lon, pattern = (pattern))
+
+
+
+artifactMARplot <- ggplot(dfArtifacts) + geom_raster(aes(x = lon, y = lat, fill = pattern)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "viridis", name = "") + 
+    ggtitle(label = "MAR Unnormalized Artifacts") 
+plot(artifactMARplot)
+
+summary(abs(noneSurfaceMAR - kroneckerSurfaceMAR))
+
+
+#UNNORMALIZED ARTIFACTS FOR MAR (subset for visualization)
+dfArtifactsSmol <- subset(dfArtifacts, lat >= 40 & lat <= 50 & lon >= 65 & lon <= 75)
+artifactMARplotSmol <- ggplot(dfArtifactsSmol) + geom_raster(aes(x = lon, y = lat, fill = pattern)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "viridis", name = "") + 
+    ggtitle(label = "MAR Unnormalized Artifacts (Subset)") + 
+    theme(plot.title = element_blank())
+plot(artifactMARplotSmol)
+
+
+
+
+#FFT STUFF########################################################
+
+#are there any artifacts from FFT? 
+FFTpattern <- (FFTSurfaceMAR - kroneckerSurfaceMAR)
+dfFFTArtifacts <- data.frame(lat = df$lat, lon = df$lon, FFTpattern = (FFTpattern))
+
+FFTartifactMARplot <- ggplot(dfFFTArtifacts) + geom_raster(aes(x = lon, y = lat, fill = FFTpattern)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "viridis", name = "",labels = label_number()) + 
+    ggtitle(label = "MAR FFT Baby Artifacts") 
+plot(FFTartifactMARplot)
+
+summary(abs(FFTSurfaceMAR - kroneckerSurfaceMAR))
+
+
+#are there any artifacts from FFT? (SCALED AND SUBSETTED TO MATCH unnormalized)
+dfFFTArtifactsSmol <- subset(dfFFTArtifacts, lat >= 40 & lat <= 50 & lon >= 65 & lon <= 75)
+FFTartifactMARplotSmol <- ggplot(dfFFTArtifactsSmol) + geom_raster(aes(x = lon, y = lat, fill = FFTpattern)) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "viridis", name = "",labels = label_number()) + #, limits = c(min(pattern), max(pattern))) + 
+    ggtitle(label = "MAR FFT Baby Artifacts (Subset)") + 
+    theme(plot.title = element_blank())
+plot(FFTartifactMARplotSmol)
+
+
+
+#make sure kroneck and exact are the same 
+test.for.zero(exactSurfaceMAR, kroneckerSurfaceMAR, tol = 1e-8)
+#eh, close enough
+test.for.zero(exactSurfaceMAR, kroneckerSurfaceMAR, tol = 1e-5)
+```
+
+
+Now let's generate artifact plots for the paper (section 5): 
+
+```{r}
+artifactComparePlot <- artifactMARplotSmol + 
+                       FFTartifactMARplotSmol + 
+                       plot_layout(axis_titles = 'collect')
+plot(artifactComparePlot)
+
+pdf("big_data_analysis/figures/artifact_compare.pdf", width = 8, height = 3)
+plot(artifactComparePlot)
+dev.off()
+
+```
+
+
