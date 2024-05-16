@@ -4,8 +4,6 @@ This is a supplementary repository that houses experiments and figures for the p
 
 *Normalizing Basis Functions: Approximate Stationary Models for Large Spatial Data*
 
-${\color{lightgreen}\text{Blue}}$
-
 **Authors**: Antony Sikorski, Daniel McKenzie, and Douglas Nychka
 
 A preprint of the paper is currently available at: [Google](google.com)
@@ -24,7 +22,7 @@ If you wish to cite this paper, please do so with the following BibTeX:
 
 ### `LatticeKrigRPackage/`
 
-This folder contains the experimental, research version of the LatticeKrig package. 
+This folder contains the experimental, research version of the **`LatticeKrig`** package. 
 - All scripts in this repo should prompt you to download this in order to reproduce the experiments. The first code block will look like this:
 - The user simply needs to do is change the working directory when prompted. A local install of the **`LatticeKrig`** package will then be made on your machine. The line should look like this:
   ```R
