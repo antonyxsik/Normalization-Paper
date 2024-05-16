@@ -4,7 +4,7 @@ This is a supplementary repository that houses experiments and figures for the p
 
 *Normalizing Basis Functions: Approximate Stationary Models for Large Spatial Data*
 
-${\color{lightgreen}Blue}$
+${\color{lightgreen}\text{Blue}}$
 
 **Authors**: Antony Sikorski, Daniel McKenzie, and Douglas Nychka
 
