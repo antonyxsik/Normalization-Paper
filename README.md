@@ -11,7 +11,7 @@ A preprint of the paper is currently available at: LINKHERE
 
 Description of Files: 
 
-Folder "LatticeKrigRPackage": 
+Folder `LatticeKrigRPackage/`: 
 
 This folder contains the experimental, research version of the LatticeKrig package. 
 - All scripts in this repo should urge you to download this in order to reproduce the experiments.
