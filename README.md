@@ -8,6 +8,10 @@ This is a supplementary repository that houses experiments and figures for the p
 
 A preprint of the paper is currently available at: [Google](google.com)
 
+## Citation Instructions
+
+If you wish to cite this paper, please do so with the following BibTeX: 
+
 ## Abstract
 
 > In geostatistics, traditional spatial models often rely on the Gaussian Process (GP) to fit stationary covariances to data. It is well known that this approach becomes computationally infeasible when dealing with large data volumes, necessitating the use of approximate methods. A powerful class of methods approximate the GP as a sum of basis functions with random coefficients. Although this technique offers computational efficiency, it does not inherently guarantee a stationary covariance. To mitigate this issue, the basis functions can be “normalized” to maintain a constant marginal variance, avoiding unwanted artifacts and edge effects. This allows for the fitting of nearly stationary models to large, potentially non-stationary datasets, providing a rigorous base to extend to more complex problems. Unfortunately, the process of normalizing these basis functions is computationally demanding. To address this, we introduce two fast and accurate algorithms to the normalization step, allowing for efficient prediction on fine grids. The practical value of these algorithms is showcased in the context of a full spatial workflow on a large dataset, where significant computational speedups are achieved. While implementation and testing is done specifically within the LatticeKrig framework, these algorithms can be adapted to other basis function methods operating on regular grids. 
