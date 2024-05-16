@@ -39,7 +39,7 @@ This folder contains the majority of the timing and error experiments, along wit
 ### `big_data_analysis/`:
 This folder contains the experiments for Section 5, where the entire workflow of a large, simulated climate dataset is timed, and accuracy is investigated.
 
-- `simulated_fit_predict.Rmd` : This creates the full data, train and test split, fits the model, and generates prediction surfaces. The data is saved in the `big_data_analysis/dataframes/` folder. The resulting fits and predictions, along with the times, are saved in the `big_data_analysis/results/` folder.
+- `simulated_fit_predict.Rmd` : This creates the full data, train and test split, fits the model, and generates prediction surfaces. The data is saved in the `big_data_analysis/dataframes/` folder. The resulting fits and predictions, along with the times, would typically be saved in the `big_data_analysis/results/` folder. The scripts are still set up to save them there, but due to the fits being such large files, we instead choose to store them in [this Google Drive folder](https://drive.google.com/drive/folders/1zPAspblrd8kHy2XLfZfRspxae5X4__HI?usp=sharing). The `big_data_analysis/results/` folder on Github should also contain a text file with the link to this folder.
 - `simulated_figures.Rmd` : This script loads in all data, fits, and predictions. It assess accuracy using various metrics, and creates tables summarizing the results. It also creates tons of figures of data, predicted surfaces, and artifacts. The two figures in Section 5 of the paper are created here, and are saved in the `big_data_analysis/figures/` folder. 
 
 
