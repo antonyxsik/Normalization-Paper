@@ -22,6 +22,7 @@ Folder "latticekrig_functions":
 - Also contains the "LKrig.sim.conditional.foreach.R" function for conditional simulation in parallel (optional) and the fillGrid.R function (convenient grid checking).
 
 Folder "timing_error": 
+
 This folder contains the majority of the timing and error experiments, along with the bulk of the figure generation for the paper. 
 - timing_error_script.R: Performs all of the experiments. This takes multiple separate nights to run, and thus I would avoid running it. The end product of this script is all of the ".rda" files that appear in the "timing_error/dataframes" folder.
 - figure_generation.Rmd: Creates all visualizations for Sections 1-4 of the paper, along with a bit of basic hyperparameter exploration at the end. This file should not take long to run. This script creates almost everything in the "timing_error/figures" folder. The process visualization for FFT normalization was created using an external image editing application.
