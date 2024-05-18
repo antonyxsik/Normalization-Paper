@@ -613,27 +613,6 @@ dev.off()
 
 Here we test a few theories. None of these plots will be used in the paper for pretty visualizations. They are just for investigation and understanding.  
 
-For example, how does coarse grid size impact the error: 
-
-```{r}
-load("timing_error/dataframes/coarsegrid_error.rda")
-print(df_CoarseGrid)
-print.data.frame(df_CoarseGrid)
-
-plot(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MaxErrorPercent, pch = 16, 
-     xlab = "Starting Grid Side Length", ylab = "Mean Error (%)")
-lines(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MaxErrorPercent, 
-      col = "blue", lwd = 1.5)
-
-
-plot(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MeanErrorPercent, pch = 16, 
-     xlab = "Starting Grid Side Length", ylab = "Max Error (%)")
-lines(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MeanErrorPercent, pch = 16, 
-      col = "blue", lwd = 1.5)
-```
-
-Course grid increase will monotonically decrease the error until we end up with machine error. 
-
 
 How does the number of buffer function impact the error? 
 
@@ -674,3 +653,24 @@ lines(df_awght$A.wght, abs(df_awght$MeanErrorPercent), pch = 16,
 ```
 
 It appears that the awght (overlap) slightly impacts the error, and the original 4.05 parameter works the best as expected. 
+
+How does coarse grid size impact the error: 
+
+```{r}
+load("timing_error/dataframes/coarsegrid_error.rda")
+print(df_CoarseGrid)
+print.data.frame(df_CoarseGrid)
+
+plot(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MaxErrorPercent, pch = 16, 
+     xlab = "Starting Grid Side Length", ylab = "Mean Error (%)")
+lines(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MaxErrorPercent, 
+      col = "blue", lwd = 1.5)
+
+
+plot(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MeanErrorPercent, pch = 16, 
+     xlab = "Starting Grid Side Length", ylab = "Max Error (%)")
+lines(df_CoarseGrid$`Coarse Grid`, df_CoarseGrid$MeanErrorPercent, pch = 16, 
+      col = "blue", lwd = 1.5)
+```
+
+Course grid increase will monotonically decrease the error until we end up with machine error. 
