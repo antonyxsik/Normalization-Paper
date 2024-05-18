@@ -28,6 +28,13 @@ This folder contains the experimental, research version of the **`LatticeKrig`**
   ```R
   install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
   ```
+- If one wishes to uninstall this experimental version and re-download the default version of **`LatticeKrig`** from CRAN, they can do so with these two lines (should also be available to uncomment in the `figure_generation.Rmd` script): 
+  ```R
+  #removes experimental
+  remove.packages("LatticeKrig")
+  #default from CRAN
+  install.packages("LatticeKrig")  
+  ```
 
 ### `latticekrig_functions/`:
 This folder highlights which functions in the LatticeKrig package were modified. It is not necessary to do anything with these, as they will be installed on your machine through `LatticeKrigRPackage/`. Regardless, if one is interested, they may look here. 

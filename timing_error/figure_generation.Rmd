@@ -21,6 +21,10 @@ knitr::opts_knit$set(root.dir = normalizePath("C:/Users/anton/Desktop/Normalizat
 
 #UNCOMMENT THIS LINE IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET
 #install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
+
+#IF YOU WOULD LIKE TO REINSTALL CRAN (default) LATTICEKRIG
+#remove.packages("LatticeKrig")
+#install.packages("LatticeKrig")
 ```
 
 ### Necessary Libraries and Source Functions:  
