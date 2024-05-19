@@ -63,7 +63,7 @@ fullplot <- ggplot(df) + geom_raster(aes(x = lon, y = lat, fill = air_temp)) +
     scale_fill_viridis_c(option = "turbo", name = "", 
                          limits = c(min(df$air_temp), max(df$air_temp))) + 
     ggtitle(label = "True Surface") + 
-    theme(plot.title = element_blank())
+    theme(plot.title = element_blank()) + xlab("x") + ylab("y")
 plot(fullplot)
 ```
 
@@ -87,7 +87,7 @@ trainBLOCKSplot <- ggplot(trainBLOCKS) + geom_raster(aes(x = lon, y = lat, fill 
     scale_fill_viridis_c(option = "turbo", name = "", 
                          limits = c(min(df$air_temp), max(df$air_temp))) + 
     ggtitle(label = "Train (Blocks)") + 
-    theme(plot.title = element_blank())
+    theme(plot.title = element_blank()) + xlab("x") + ylab("y")
 plot(trainBLOCKSplot)
   
   
@@ -243,7 +243,7 @@ trainMARplot <- ggplot(trainMAR) + geom_raster(aes(x = lon, y = lat, fill = air_
     scale_fill_viridis_c(option = "turbo", name = "", 
                          limits = c(min(df$air_temp), max(df$air_temp))) + 
     ggtitle(label = "Train (MAR)") + 
-    theme(plot.title = element_blank())
+    theme(plot.title = element_blank()) + xlab("x") + ylab("y")
 plot(trainMARplot)
   
   
@@ -267,7 +267,7 @@ to <- c(50, 80, 50, 80)
 trainMARplot <- trainMARplot + geom_magnify(from = from, to = to)
 #trainMARplot
 
-paperPlot <- trainBLOCKSplot + trainMARplot + fullplot + plot_layout(guides = 'collect', axis_titles = 'collect')
+paperPlot <- fullplot + trainMARplot + trainBLOCKSplot + plot_layout(guides = 'collect', axis_titles = 'collect')
 plot(paperPlot)
 
 pdf("big_data_analysis/figures/simulated_trains_full.pdf", width = 8, height = 2.7)
@@ -381,7 +381,7 @@ artifactMARplotSmol <- ggplot(dfArtifactsSmol) + geom_raster(aes(x = lon, y = la
     theme_bw() +
     scale_fill_viridis_c(option = "viridis", name = "") + 
     ggtitle(label = "MAR Unnormalized Artifacts (Subset)") + 
-    theme(plot.title = element_blank())
+    theme(plot.title = element_blank()) + xlab("x") + ylab("y")
 plot(artifactMARplotSmol)
 
 
@@ -408,7 +408,7 @@ FFTartifactMARplotSmol <- ggplot(dfFFTArtifactsSmol) + geom_raster(aes(x = lon, 
     theme_bw() +
     scale_fill_viridis_c(option = "viridis", name = "",labels = label_number()) + #, limits = c(min(pattern), max(pattern))) + 
     ggtitle(label = "MAR FFT Baby Artifacts (Subset)") + 
-    theme(plot.title = element_blank())
+    theme(plot.title = element_blank()) + xlab("x") + ylab("y")
 plot(FFTartifactMARplotSmol)
 
 
