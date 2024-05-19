@@ -22,17 +22,17 @@ If you wish to cite this paper, please do so with the following BibTeX:
 
 ### `LatticeKrigRPackage/`
 
-This folder contains the experimental, research version of the **`LatticeKrig`** package. 
+This folder contains the development (research) version of the **`LatticeKrig`** package. 
 - All scripts in this repo should prompt you to download this in order to reproduce the experiments. The first code block will look like this:
-- The user simply needs to do is change the working directory when prompted. A local install of the **`LatticeKrig`** package will then be made on your machine. The line should look like this:
+- The user simply needs to change the working directory when prompted. A local install of the **`LatticeKrig`** package will then be made on your machine. The line should look like this:
   ```R
   install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
   ```
-- If one wishes to uninstall this experimental version and re-download the default version of **`LatticeKrig`** from CRAN, they can do so with these two lines (should also be available to uncomment in the `figure_generation.Rmd` script): 
+- If one wishes to uninstall the development version and re-download the default version of **`LatticeKrig`** from CRAN, they can do so with these two lines (should also be available to uncomment in the `figure_generation.Rmd` script): 
   ```R
-  #removes experimental
+  #removes development version
   remove.packages("LatticeKrig")
-  #default from CRAN
+  #downloads default from CRAN
   install.packages("LatticeKrig")  
   ```
 
