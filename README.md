@@ -1,5 +1,7 @@
 # Normalization-Paper
 
+## TODO: ADD DESCRIPTION OF BOTH FFT ALGORITHMS, KRONECKER ALGORITHM, ADD FFTINTERPOLATE FILE INTO LATTICEKRIG FUNCTIONS
+
 This is a supplementary repository that houses experiments and figures for the paper: 
 
 *Normalizing Basis Functions: Approximate Stationary Models for Large Spatial Data*
