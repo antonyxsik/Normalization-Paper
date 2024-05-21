@@ -41,7 +41,10 @@ This folder contains the development (research) version of the **`LatticeKrig`**
 ### `latticekrig_functions/`:
 This folder highlights which functions in the LatticeKrig package were modified. It is not necessary to do anything with these, as they will be installed on your machine through `LatticeKrigRPackage/`. Regardless, if one is interested, they may look here. 
 
-- Also contains the `LKrig.sim.conditional.foreach.R` function for conditional simulation in parallel (optional) and the `fillGrid.R` function (convenient grid checking).
+- The `LKrigNormalizeBasisFFTInterpolate_scale.R` function contains the FFT based algorithm for specific grid sizes. 
+- The `LKrigNormalizeBasisFFTInterpolate.R` function is a slight modification that allows for much more flexibility with coarse and fine grid sizes, but results in content bleeding. A shift at the end of the algorithms attempts to account for content bleeding. 
+- The `LKRectangleFastNormalization.R` function calls `findNormNEW.f` to perform the exact normalization using the Kronecker based algorithm. 
+- Also contains: `LKrig.sim.conditional.foreach.R` function for conditional simulation in parallel (optional), the `fillGrid.R` function (convenient grid checking), and the `interp.surface.FFT.R` function, which can help someone build their own fft upsampling function for any application. The fft interp function currently uses a scale factor, but can be easily adjusted to take any coarse and fine grid sizes by following the method in `LKrigNormalizeBasisFFTInterpolate.R`. 
 
 ### `timing_error/` 
 
