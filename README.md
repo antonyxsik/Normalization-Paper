@@ -38,14 +38,6 @@ This folder contains the development (research) version of the **`LatticeKrig`**
   install.packages("LatticeKrig")  
   ```
 
-### `latticekrig_functions/`:
-This folder highlights which functions in the LatticeKrig package were modified. It is not necessary to do anything with these, as they will be installed on your machine through `LatticeKrigRPackage/`. Regardless, if one is interested, they may look here. 
-
-- The `LKrigNormalizeBasisFFTInterpolate_scale.R` function contains the FFT based algorithm for specific grid sizes. 
-- The `LKrigNormalizeBasisFFTInterpolate.R` function is a slight modification that allows for much more flexibility with coarse and fine grid sizes, but results in content bleeding. A shift at the end of the algorithms attempts to account for content bleeding. 
-- The `LKRectangleFastNormalization.R` function calls `findNormNEW.f` to perform the exact normalization using the Kronecker based algorithm. 
-- Also contains: `LKrig.sim.conditional.foreach.R` function for conditional simulation in parallel (optional), the `fillGrid.R` function (convenient grid checking), and the `interp.surface.FFT.R` function, which can help someone build their own fft upsampling function for any application. The fft interp function currently uses a scale factor, but can be easily adjusted to take any coarse and fine grid sizes by following the method in `LKrigNormalizeBasisFFTInterpolate.R`. 
-
 ### `timing_error/` 
 
 This folder contains the majority of the timing and error experiments, along with the bulk of the figure generation for the paper. 
@@ -57,5 +49,13 @@ This folder contains the experiments for Section 5, where the entire workflow of
 
 - `simulated_fit_predict.Rmd` : This creates the full data, train and test split, fits the model, and generates prediction surfaces. The data is saved in the `big_data_analysis/dataframes/` folder. The resulting fits and predictions, along with the times, would typically be saved in the `big_data_analysis/results/` folder. The scripts are still set up to save them there, but due to the fits being such large files, we instead choose to store them in [this Google Drive folder](https://drive.google.com/drive/folders/1zPAspblrd8kHy2XLfZfRspxae5X4__HI?usp=sharing). The `big_data_analysis/results/` folder on Github should also contain a text file with the link to this folder.
 - `simulated_figures.Rmd` : This script loads in all data, fits, and predictions. It assess accuracy using various metrics, and creates tables summarizing the results. It also creates tons of figures of data, predicted surfaces, and artifacts. The two figures in Section 5 of the paper are created here, and are saved in the `big_data_analysis/figures/` folder. 
+
+### `latticekrig_functions/`:
+This folder highlights which functions in the LatticeKrig package were modified. It is not necessary to do anything with these, as they will be installed on your machine through `LatticeKrigRPackage/`. Regardless, if one is interested, they may look here. 
+
+- The `LKrigNormalizeBasisFFTInterpolate_scale.R` function contains the FFT based algorithm for specific grid sizes. 
+- The `LKrigNormalizeBasisFFTInterpolate.R` function is a slight modification that allows for much more flexibility with coarse and fine grid sizes, but results in content bleeding. A shift at the end of the algorithms attempts to account for content bleeding. 
+- The `LKRectangleFastNormalization.R` function calls `findNormNEW.f` to perform the exact normalization using the Kronecker based algorithm. 
+- Also contains: `LKrig.sim.conditional.foreach.R` function for conditional simulation in parallel (optional), the `fillGrid.R` function (convenient grid checking), and the `interp.surface.FFT.R` function, which can help someone build their own fft upsampling function for any application. The fft interp function currently uses a scale factor, but can be easily adjusted to take any coarse and fine grid sizes by following the method in `LKrigNormalizeBasisFFTInterpolate.R`. 
 
 
