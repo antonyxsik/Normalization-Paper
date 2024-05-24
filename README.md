@@ -6,7 +6,7 @@ This is a supplementary repository that houses experiments and figures for the p
 
 **Authors**: Antony Sikorski, Daniel McKenzie, and Douglas Nychka
 
-A preprint of the paper is currently available at: [linkheresoon](https://www.google.com)
+A preprint of the paper is currently available at: [arXiv](https://arxiv.org/abs/2405.13821)
 
 ## Citation Instructions
 
