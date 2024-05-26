@@ -10,7 +10,7 @@ A preprint of the paper is currently available at: [arXiv](https://arxiv.org/abs
 
 ## Cite this as: 
 
-If you wish to cite this paper, please do so with the following BibTeX: 
+If you use this code in your work or simply need to cite this paper, please do so with the following BibTeX: 
 
 ```{bibtex}
 @misc{sikorski2024normalizing,
