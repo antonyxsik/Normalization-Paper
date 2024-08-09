@@ -62,6 +62,7 @@ numDraws <- 10
 Making the full dataset with fast option in fields: 
 
 ```{r}
+tic()
 #creating data
 set.seed(236)
 
@@ -85,7 +86,7 @@ obj<- circulantEmbeddingSetup( grid,
                               )
 
 field <- circulantEmbedding(obj)
-
+toc()
 field <- 5 * field + 2 + (0.2*rnorm(length(field)))
 
 imagePlot(field, main = "Simulated Random Field with Matern Covariance", 
