@@ -40,7 +40,7 @@ LKrigNormalizeBasisSelector <- function(LKinfo, Level, x1, verbose){
     #wght <- LKrigNormalizeBasisFFTInterpolate(LKinfo, Level, x1)
   
     # For scale factor 
-    wght <- LKrigNormalizeBasisFFTInterpolate_scale(LKinfo, Level, x1)
+    wght <- LKrigNormalizeBasisFFTInterpolate_scale(LKinfo, Level, x1, verbose)
   }
   
   # When coarse grid size gets too big (too many basis functions)
