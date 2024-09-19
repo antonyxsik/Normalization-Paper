@@ -20,12 +20,12 @@
 # or see http://www.r-project.org/Licenses/GPL-2
 
 
-LKrigNormalizeBasisFFTInterpolate <- function(LKinfo, Level, x1, scalefactor = 4){
+LKrigNormalizeBasisFFTInterpolate <- function(LKinfo, Level, x1){
   # This functions evaluates the variance of the basis functions on a coarser grid, 
   # then uses 2D interpolation via FFT in order to smooth/interpolate the variance 
   # up to the size of the original grid that we were working with. Should provide a 
   # significant computational speedup. 
-  
+
   # Extracting important information from LKinfo 
   bounds <- cbind(c(min(LKinfo$x[,1]), max(LKinfo$x[,1])), 
                   c(min(LKinfo$x[,2]), max(LKinfo$x[,2])))
@@ -35,7 +35,7 @@ LKrigNormalizeBasisFFTInterpolate <- function(LKinfo, Level, x1, scalefactor = 4
                         LKinfo$latticeInfo$mxDomain[Level,2])
   gridOrientation <- which.max(c(LKinfo$latticeInfo$mxDomain[Level,1],
                                  LKinfo$latticeInfo$mxDomain[Level,2]))
-  
+
   buffer <- LKinfo$NC.buffer
   alphaNum <- LKinfo$alpha[Level]
   awght <- LKinfo$a.wght[Level]
@@ -53,9 +53,8 @@ LKrigNormalizeBasisFFTInterpolate <- function(LKinfo, Level, x1, scalefactor = 4
   # Setting a default coarse grid size based on the number of basis functions 
   # MINIMUM VALUE is 2 * basisNum - 1
   # NOTE: can play with this for accuracy
-  scalefactor <- scalefactor
-  miniGridSize_big <- scalefactor * basisNum_big - 3
-  miniGridSize_small <- scalefactor * basisNum_small - 3
+  miniGridSize_big <- 4 * basisNum_big
+  miniGridSize_small <- 4 * basisNum_small
   
   if (miniGridSize_big >= maxDimension || miniGridSize_small >= minDimension) {
     stop("Warning: Minimum coarse grid based on the number of basis functions is 
@@ -83,22 +82,13 @@ LKrigNormalizeBasisFFTInterpolate <- function(LKinfo, Level, x1, scalefactor = 4
     
     # Calling LKrig.cov to evaluate the variance on the coarse grid
     # this is the initial, small variance calculation that we will upsample
-    
-    #using exact 
-    # roughMat <- as.surface(sGrid, 
-    #                        LKrig.cov(sGrid, LKinfo = LKinfoNew, marginal=TRUE )
-    #                        )[["z"]]
-    
-    #using kronecker 
     roughMat <- as.surface(sGrid, 
-                           LKrigNormalizeBasisFast(LKinfo = LKinfoNew, Level = 1, x = sGrid)
+                           LKrig.cov(sGrid, LKinfo = LKinfoNew, marginal=TRUE )
                            )[["z"]]
-
     
     # FFT step: taking the fft of the small variance
     # reliant on fftwtools package
-    #fftStep <- fftw2d((roughMat)/length(roughMat))
-    fftStep <- fft(roughMat)
+    fftStep <- fftw2d((roughMat)/length(roughMat))
     
     # Helpful dimensions
     snr <- nrow(fftStep) 
@@ -130,13 +120,11 @@ LKrigNormalizeBasisFFTInterpolate <- function(LKinfo, Level, x1, scalefactor = 4
     
     # takes the IFFT of the modified big matrix to return our interpolated/upsampled variance
     # again reliant on fftwtools package
-    #wght <- Re(fftw2d(temp, inverse = 1))
-    wght<- Re(fft( temp, inverse=TRUE))/ (snr*snc)
-    wght<- wght[1:nr, 1:nc]
+    wght <- Re(fftw2d(temp, inverse = 1))
     
     # Shifting due to the periodicity assumed by the FFT
-    #wght <- LKrig.shift.matrix(wght, shift.row = yShift, shift.col = xShift, periodic = c(TRUE, TRUE))
-    
+    wght <- LKrig.shift.matrix(wght, shift.row = yShift, shift.col = xShift, periodic = c(TRUE, TRUE))
+
     #the next steps are done to account for oddly sized/missing data
     # the fft calculation will produce a full grid
     # but only certain observations need a variance associated with them

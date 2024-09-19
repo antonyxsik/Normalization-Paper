@@ -1,15 +1,14 @@
 
 
-LKrigNormalizeBasisFFTInterpolate_scale <- function(LKinfo, Level, x1){
+LKrigNormalizeBasisFFTInterpolate_scale <- function(LKinfo, Level, x1, verbose){
   # This functions evaluates the variance of the basis functions on a coarser grid, 
   # then uses 2D interpolation via FFT in order to smooth/interpolate the variance 
   # up to the size of the original grid that we were working with. Should provide a 
   # significant computational speedup. 
   # big grid N must be a multiple of small grid n, N= Mn - M + 1
-  
-  cat("Using FFT normalization method for level", Level, fill = TRUE)
-  
-  
+  if (verbose){
+    cat("Using FFT normalization method for level", Level, fill = TRUE)
+  }
   
   # Extracting important information from LKinfo 
   bounds <- cbind(c(min(LKinfo$x[,1]), max(LKinfo$x[,1])), 
