@@ -33,6 +33,7 @@ The **`LatticeKrig`** R package is required to reproduce the scripts, visualizat
 ```R
 install.packages("LatticeKrig") 
 ```
+This line is at the top of all scripts and RMarkdown notebooks in this repository. 
 
 ## Contents
 
