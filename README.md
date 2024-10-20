@@ -29,7 +29,7 @@ If you use this code in your work or simply need to cite this paper, please do s
 
 ## LatticeKrig
 
-The **`LatticeKrig`** R package is required to reproduce the scripts, visualizations, and experiments in this repository. Previously, this repository housed a development version of the package. This version has since been published on [CRAN](https://cran.r-project.org/web/packages/LatticeKrig/), and can now be installed as shown below. 
+The **`LatticeKrig`** R package is required to reproduce the scripts, visualizations, and experiments in this repository. Previously, this repository housed a development version of the package. The package has since been published to [CRAN](https://cran.r-project.org/web/packages/LatticeKrig/) and is on version 9.3.0. In order to install **`LatticeKrig`**, simply type the following in R. 
 ```R
 install.packages("LatticeKrig") 
 ```
@@ -49,7 +49,7 @@ This folder contains the experiments for Section 5, where the entire workflow of
 - `simulated_figures.Rmd` : This script loads in all data, fits, and predictions. It assess accuracy using various metrics, and creates tables summarizing the results. It also creates tons of figures of data, predicted surfaces, and artifacts. The two figures in Section 5 of the paper are created here, and are saved in the `big_data_analysis/figures/` folder. 
 
 ### `latticekrig_functions/`:
-This folder highlights which functions in the LatticeKrig package have been modified or added to the version . It is not necessary to do anything with these, as they will be installed on your machine through `LatticeKrigRPackage/`. Regardless, if one is interested, they may look here. 
+This folder contains the functions that were modified or added to the **`LatticeKrig `** v9.3.0 release, along with some helper functions used in the experiments. It is not necessary to do anything with these, as all necessary functions will be installed on your machine when the package is downloaded. Regardless, if one is interested, they may look here. 
 
 - The `LKrigNormalizeBasisFFTInterpolate_scale.R` function contains the FFT based algorithm for specific grid sizes. 
 - The `LKrigNormalizeBasisFFTInterpolate.R` function is a slight modification that allows for much more flexibility with coarse and fine grid sizes, but results in content bleeding. A shift at the end of the algorithms attempts to account for content bleeding. 
