@@ -49,7 +49,7 @@ This folder contains the experiments for Section 5, where the entire workflow of
 - `simulated_figures.Rmd` : This script loads in all data, fits, and predictions. It assess accuracy using various metrics, and creates tables summarizing the results. It also creates tons of figures of data, predicted surfaces, and artifacts. The two figures in Section 5 of the paper are created here, and are saved in the `big_data_analysis/figures/` folder. 
 
 ### `latticekrig_functions/`:
-This folder contains the functions that were modified or added to the **`LatticeKrig `** v9.3.0 release, along with some helper functions used in the experiments. It is not necessary to do anything with these, as all necessary functions will be installed on your machine when the package is downloaded. Regardless, if one is interested, they may look here. 
+This folder contains the functions that were modified or added to the **`LatticeKrig `** v9.3.0 release, along with some helper functions used in the experiments. It is not necessary to do anything with these, as all necessary functions will be installed on your machine when the package is downloaded. Regardless, if one is interested, they may look here. A few noteworthy functions are: 
 
 - The `LKrigNormalizeBasisFFTInterpolate_scale.R` function contains the FFT based algorithm for specific grid sizes. 
 - The `LKrigNormalizeBasisFFTInterpolate.R` function is a slight modification that allows for much more flexibility with coarse and fine grid sizes, but results in content bleeding. A shift at the end of the algorithms attempts to account for content bleeding. 
