@@ -2,7 +2,7 @@
 ###########################################################################
 
 
-# this script takes forever to run (roughly 5 nights)
+# this script takes long to run on a powerful laptop (roughly 5 nights)
 # contains all experiments that create dataframes for figure_generation.Rmd
 
 
@@ -10,8 +10,8 @@
 setwd("C:/Users/anton/Desktop/Normalization_Paper_Github/Normalization-Paper")
 
 
-#UNCOMMENT IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET 
-#install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
+#UNCOMMENT IF YOU HAVE NOT INSTALLED LATTICEKRIG 
+# install.packages("LatticeKrig")
 
 
 #libraries

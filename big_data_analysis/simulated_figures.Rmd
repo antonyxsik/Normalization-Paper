@@ -14,13 +14,9 @@ knitr::opts_knit$set(root.dir = normalizePath("C:/Users/anton/Desktop/Normalizat
 ```
 
 
-Locally installing the research version of LatticeKrig: 
+Uncomment to install LatticeKrig: 
 ```{r}
-#local development install
-#install temporary version of LatticeKrig
-
-#UNCOMMENT IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET:
-#install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
+# install.packages("LatticeKrig")
 ```
 
 Libraries and files:
@@ -46,8 +42,12 @@ library(scales)
 # parallel conditional sim 
 source("latticekrig_functions/LKrig.sim.conditional.foreach.R")
 
+source("latticekrig_functions/LKrigNormalizeBasisFFTInterpolate_scale.R")
+
 #convenient grid checker
 source("latticekrig_functions/fillGrid.R")
+
+
 ```
 
 

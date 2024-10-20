@@ -13,18 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = normalizePath("C:/Users/anton/Desktop/Normalization_Paper_Github/Normalization-Paper")) #CHANGE THIS
 ```
 
-### Local LatticeKrig Install (Research Version)
+### LatticeKrig Install 
 
 ```{r}
-#local development install
-#install temporary version of LatticeKrig
-
-#UNCOMMENT THIS LINE IF YOU HAVE NOT INSTALLED RESEARCH VERSION YET
-#install.packages("LatticeKrigRPackage/LatticeKrig", repos = NULL, type="source")
-
-#IF YOU WOULD LIKE TO REINSTALL CRAN (default) LATTICEKRIG
-#remove.packages("LatticeKrig")
-#install.packages("LatticeKrig")
+## uncomment to install
+# install.packages("LatticeKrig")
 ```
 
 ### Necessary Libraries and Source Functions:  
@@ -46,6 +39,7 @@ library(fftwtools)
 
 #convenient functions
 source("latticekrig_functions/fillGrid.R")
+source("latticekrig_functions/LKrigNormalizeBasisFFTInterpolate_scale.R")
 ```
 
 
