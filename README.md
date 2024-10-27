@@ -6,7 +6,7 @@ This is a supplementary repository that houses experiments and figures for the p
 
 **Authors**: Antony Sikorski, Daniel McKenzie, and Douglas Nychka
 
-A preprint of the paper is currently available on [arXiv](https://arxiv.org/abs/2405.13821).
+The article can be found [here](https://onlinelibrary.wiley.com/doi/10.1002/sta4.70015), and the revised preprint is available on [arXiv](https://arxiv.org/abs/2405.13821).
 
 ## Cite this as: 
 
@@ -16,8 +16,12 @@ If you use this code in your work or simply need to cite this paper, please do s
 @article{sikorski2024normalizing,
   title={Normalizing Basis Functions: Approximate Stationary Models for Large Spatial Data},
   author={Sikorski, Antony and McKenzie, Daniel and Nychka, Douglas},
-  journal={arXiv preprint arXiv:2405.13821},
-  year={2024}
+  journal={Stat},
+  volume={13},
+  number={4},
+  pages={e70015},
+  year={2024},
+  publisher={Wiley Online Library}
 }
 ```
 
