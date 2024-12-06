@@ -1,6 +1,6 @@
 # Normalizing Basis Functions
 
-This is a supplementary repository that houses experiments and figures for the paper: 
+This is a supplementary repository that contains experiments and figures for the paper: 
 
 *Normalizing Basis Functions: Approximate Stationary Models for Large Spatial Data*
 
